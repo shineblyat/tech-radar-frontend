@@ -1,0 +1,13 @@
+/* src/pages/VotingPage.css */
+
+.voting-page {
+    padding: 20px;
+  }
+  
+  .spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+  }
+  

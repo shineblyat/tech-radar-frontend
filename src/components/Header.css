@@ -1,0 +1,48 @@
+/* src/components/Header.css */
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #001529;
+    padding: 0 20px;
+  }
+  
+  .logo {
+    color: #fff;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .menu {
+    flex: 1;
+    margin-left: 50px;
+    background: none;
+    border-bottom: none;
+  }
+  
+  .menu .ant-menu-item {
+    color: #fff;
+  }
+  
+  .menu .ant-menu-item:hover {
+    background-color: #1890ff;
+  }
+  
+  .user-section {
+    display: flex;
+    align-items: center;
+  }
+  
+  .user-info {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  .user-name {
+    color: #fff;
+    margin-left: 8px;
+  }
+  
