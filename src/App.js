@@ -1,43 +1,69 @@
-// src/App.js
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
+import Dashboard from './pages/Dashboard';
+import VotingPage from './pages/VotingPage'; // Убедитесь, что VotingPage импортирован
+import AdminPage from './pages/AdminPage';
+import HomePage from './pages/HomePage';
+import ProtectedRoute from './components/ProtectedRoute';
+import Header from './components/Header';
 import { Provider } from 'react-redux';
 import store from './store/store';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Layout } from 'antd';
 
-import Header from './components/Header';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import VotingPage from './pages/VotingPage';
-import AdminPage from './pages/AdminPage';
-import ProtectedRoute from './components/ProtectedRoute';
+const { Content, Footer } = Layout;
 
-function App() {
+const App = () => {
   return (
     <Provider store={store}>
       <Router>
-        <Header />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/vote" element={<VotingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <AdminPage />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-        <ToastContainer />
+        <Layout style={{ minHeight: '100vh' }}>
+          <Header />
+          <Content style={{ padding: '20px' }}>
+            <Routes>
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/login" element={<LoginPage />} />
+
+              {/* Защищённый маршрут для Dashboard */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Защищённый маршрут только для ADMIN */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requiredRoles="ADMIN">
+                    <AdminPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Защищённый маршрут для голосования */}
+              <Route
+                path="/vote"
+                element={
+                  <ProtectedRoute>
+                    <VotingPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Главная страница */}
+              <Route path="/" element={<HomePage />} />
+            </Routes>
+          </Content>
+          <Footer style={{ textAlign: 'center' }}>© 2024 TechRadar</Footer>
+        </Layout>
       </Router>
     </Provider>
   );
-}
+};
 
 export default App;

@@ -4,14 +4,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { Modal, Button, Select, Input, message } from 'antd';
 import { useSelector } from 'react-redux';
-import axiosInstance from '../utils/axiosInstance';
+import { axiosTech, axiosVoting } from '../utils/axiosInstances'; // Изменили импорт на axiosTech и axiosVoting
 import './TechRadar.css'; // Импортируем стили для компонента
 
 const { Option } = Select;
 
-const TechRadar = ({ technologies = [] }) => {
+const TechRadar = ({ technologies = [], refetchTechnologies }) => { // Добавлен проп refetchTechnologies
   const svgRef = useRef();
-  const [isModalOpen, setIsModalOpen] = useState(false); // Изменено на isModalOpen
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTech, setSelectedTech] = useState(null);
   const [filters, setFilters] = useState({ ring: 'All', quadrant: 'All' });
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,7 +125,7 @@ const TechRadar = ({ technologies = [] }) => {
         .attr('fill', ringColors[tech.rang])
         .on('click', () => {
           setSelectedTech(tech);
-          setIsModalOpen(true); // Изменено на setIsModalOpen
+          setIsModalOpen(true);
         });
 
       // Название технологии
@@ -142,11 +142,10 @@ const TechRadar = ({ technologies = [] }) => {
 
   const handleVote = async (techId) => {
     try {
-      const response = await axiosInstance.post('/vote', { technologyId: techId });
-      if (response.status === 200) {
+      const response = await axiosVoting.post('/vote', { technologyId: techId }); // Используем axiosVoting
+      if (response.status === 200 || response.status === 201) {
         message.success('Ваш голос учтен');
-        // Здесь можно обновить данные технологий
-        // Например, повторно вызвать функцию для получения технологий
+        refetchTechnologies(); // Обновляем данные после голосования
       }
     } catch (error) {
       if (error.response && error.response.status === 400) {

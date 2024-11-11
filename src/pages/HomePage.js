@@ -1,7 +1,7 @@
 // src/pages/HomePage.js
 
 import React, { useEffect, useState } from 'react';
-import axiosInstance from '../utils/axiosInstance';
+import { axiosTech } from '../utils/axiosInstances'; // Исправленный импорт на axiosTech
 import { Spin, message } from 'antd';
 import TechRadar from '../components/TechRadar';
 import './HomePage.css'; // Импортируем стили для HomePage
@@ -10,32 +10,31 @@ const HomePage = () => {
   const [technologies, setTechnologies] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchTechnologies = async () => {
-      try {
-        const response = await axiosInstance.get('http://localhost:8001/technology');
-        setTechnologies(response.data);
-      } catch (error) {
-        message.error('Ошибка при загрузке технологий');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchTechnologies = async () => {
+    try {
+      const response = await axiosTech.get('/technology'); // Используем axiosTech
+      setTechnologies(response.data);
+    } catch (error) {
+      console.error('Ошибка при загрузке технологий:', error);
+      message.error('Ошибка при загрузке технологий');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchTechnologies();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="spinner-container">
-        <Spin />
-      </div>
-    );
-  }
-
   return (
     <div className="home-page">
-      <TechRadar technologies={technologies} />
+      {loading ? (
+        <div className="spinner-container">
+          <Spin size="large" />
+        </div>
+      ) : (
+        <TechRadar technologies={technologies} refetchTechnologies={fetchTechnologies} />
+      )}
     </div>
   );
 };

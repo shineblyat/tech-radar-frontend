@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Table, Button, message, Spin, Tabs } from 'antd';
-import axiosInstance from '../utils/axiosInstance';
+import { axiosTech, axiosVoting } from '../utils/axiosInstances'; // Изменили импорт на axiosTech и axiosVoting
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import './VotingPage.css'; // Импортируем стили для VotingPage
@@ -23,33 +23,40 @@ const VotingPage = () => {
       return;
     }
 
-    const fetchTechnologies = async () => {
+    const fetchData = async () => {
       try {
+        // Заменили экземпляры Axios на axiosTech и axiosVoting
         const [techResponse, votesResponse] = await Promise.all([
-          axiosInstance.get('/technology'),
-          axiosInstance.get('/vote'),
+          axiosTech.get('/technology'), // GET-запрос для получения технологий
+          axiosVoting.get('/vote'),       // GET-запрос для получения голосов пользователя
         ]);
+
+        // Предположим, что данные возвращаются в формате { data: [...] }
         setTechnologies(techResponse.data);
         setUserVotes(votesResponse.data);
       } catch (error) {
+        console.error('Ошибка при загрузке данных:', error);
         message.error('Ошибка при загрузке данных');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTechnologies();
+    fetchData();
   }, [isAuthenticated, navigate]);
 
   const handleVote = async (techId) => {
     try {
-      const response = await axiosInstance.post('/vote', { technologyId: techId });
-      if (response.status === 200) {
+      // Используем axiosVoting для голосования
+      const response = await axiosVoting.post('/vote', { technologyId: techId });
+
+      // Предположим, что успешный ответ содержит данные голоса
+      if (response.status === 200 || response.status === 201) {
         message.success('Ваш голос учтен');
-        // Обновляем список голосов пользователя
         setUserVotes((prevVotes) => [...prevVotes, response.data]);
       }
     } catch (error) {
+      console.error('Ошибка при голосовании:', error);
       if (error.response && error.response.status === 400) {
         message.error('Вы уже голосовали за эту технологию');
       } else {
@@ -61,17 +68,20 @@ const VotingPage = () => {
   if (loading) {
     return (
       <div className="spinner-container">
-        <Spin />
+        <Spin size="large" />
       </div>
     );
   }
 
-  // Фильтруем технологии, за которые пользователь уже проголосовал
+  // Получаем ID технологий, за которые пользователь уже проголосовал
   const votedTechIds = userVotes.map((vote) => vote.technologyId);
+
+  // Фильтруем доступные для голосования технологии
   const availableTechnologies = technologies.filter(
     (tech) => !votedTechIds.includes(tech.id)
   );
 
+  // Определяем колонки для таблицы доступных технологий
   const columns = [
     {
       title: 'Название',
@@ -84,7 +94,7 @@ const VotingPage = () => {
       key: 'technologyType',
     },
     {
-      title: 'Ранг',
+      title: 'Кольцо',
       dataIndex: 'rang',
       key: 'rang',
     },
@@ -99,10 +109,11 @@ const VotingPage = () => {
     },
   ];
 
+  // Определяем колонки для таблицы голосов пользователя
   const userVotesColumns = [
     {
       title: 'Название',
-      dataIndex: ['technology', 'name'],
+      dataIndex: ['technology', 'name'], // Предположим, что голос содержит объект technology
       key: 'name',
     },
     {
@@ -111,7 +122,7 @@ const VotingPage = () => {
       key: 'technologyType',
     },
     {
-      title: 'Ранг',
+      title: 'Кольцо',
       dataIndex: ['technology', 'rang'],
       key: 'rang',
     },
@@ -125,7 +136,7 @@ const VotingPage = () => {
 
   return (
     <div className="voting-page">
-      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Страница голосования</h2>
+      <h2 className="page-title">Страница голосования</h2>
       <Tabs defaultActiveKey="1">
         <TabPane tab="Доступные для голосования" key="1">
           <Table
@@ -134,6 +145,9 @@ const VotingPage = () => {
             rowKey="id"
             pagination={{ pageSize: 5 }}
             scroll={{ x: true }}
+            locale={{
+              emptyText: 'Нет доступных технологий для голосования',
+            }}
           />
         </TabPane>
         <TabPane tab="Мои голоса" key="2">
@@ -143,6 +157,9 @@ const VotingPage = () => {
             rowKey="id"
             pagination={{ pageSize: 5 }}
             scroll={{ x: true }}
+            locale={{
+              emptyText: 'Вы еще не проголосовали за технологии',
+            }}
           />
         </TabPane>
       </Tabs>

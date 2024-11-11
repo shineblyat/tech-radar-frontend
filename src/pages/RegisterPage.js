@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Form, Input, Button, Select, Spin, message, Row, Col } from 'antd';
-import axiosInstance from '../utils/axiosInstance';
+import { axiosAuth } from '../utils/axiosInstances';
 import { useNavigate } from 'react-router-dom';
 
 const { Option } = Select;
@@ -14,17 +14,23 @@ const RegisterPage = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      // Предполагая, что ваш эндпоинт регистрации - /auth/register
-      const response = await axiosInstance.post('http://localhost:8080/registration', values);
-      if (response.status === 201) { // Обычно при создании ресурса возвращается статус 201
+      // Эндпоинт регистрации - /registration
+      const response = await axiosAuth.post('/registration', values);
+      if (response.status === 200 || response.status === 201) {
         message.success('Регистрация прошла успешно!');
         navigate('/login');
       }
     } catch (error) {
-      if (error.response && error.response.data && error.response.data.message) {
-        message.error(`Ошибка при регистрации: ${error.response.data.message}`);
+      if (error.response) {
+        if (error.response.status === 400) {
+          message.error(`Ошибка при регистрации: ${error.response.data.message}`);
+        } else if (error.response.status === 401) {
+          message.error('Ошибка авторизации: Недопустимые данные');
+        } else {
+          message.error('Ошибка при регистрации');
+        }
       } else {
-        message.error('Ошибка при регистрации');
+        message.error('Нет соединения с сервером');
       }
     } finally {
       setLoading(false);
@@ -47,7 +53,7 @@ const RegisterPage = () => {
           <h2 style={{ textAlign: 'center' }}>Регистрация</h2>
           <Form.Item
             label="Имя пользователя"
-            name="name"
+            name="name" // Изменено с 'username' на 'name'
             rules={[{ required: true, message: 'Введите имя пользователя' }]}
           >
             <Input placeholder="Имя пользователя" />

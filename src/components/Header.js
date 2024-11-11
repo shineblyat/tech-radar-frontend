@@ -1,10 +1,10 @@
 // src/components/Header.js
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Layout, Menu, Dropdown, Avatar, Button } from 'antd';
-import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, SettingOutlined, AppstoreOutlined, MenuOutlined } from '@ant-design/icons';
 import { logout } from '../store/userSlice';
 import './Header.css'; // Импортируем стили для Header
 
@@ -14,31 +14,34 @@ const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector((state) => state.user);
+  const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
 
-  const handleLogout = () => {
+  // Обработчик выхода из системы
+  const handleLogout = useCallback(() => {
     dispatch(logout());
-    localStorage.removeItem('authToken');
+    // Удалили: localStorage.removeItem('authToken'); // Токены не используются
     navigate('/');
-  };
+  }, [dispatch, navigate]);
 
-  const userMenu = (
-    <Menu
-      items={[
-        {
-          key: 'logout',
-          icon: <LogoutOutlined />,
-          label: 'Выйти',
-          onClick: handleLogout,
-        },
-      ]}
-    />
+  // Обработчик кликов по пунктам меню
+  const handleMenuClick = useCallback(
+    ({ key }) => {
+      if (key === 'vote') {
+        navigate('/vote');
+      } else if (key === 'admin') {
+        navigate('/admin');
+      }
+      setMobileMenuVisible(false); // Закрываем мобильное меню после выбора пункта
+    },
+    [navigate]
   );
 
+  // Пункты основного меню с иконками
   const menuItems = [
     {
       key: 'vote',
       label: 'Голосование',
-      onClick: () => navigate('/vote'),
+      icon: <AppstoreOutlined />,
     },
   ];
 
@@ -46,42 +49,121 @@ const Header = () => {
     menuItems.push({
       key: 'admin',
       label: 'Админ панель',
-      onClick: () => navigate('/admin'),
+      icon: <SettingOutlined />,
     });
   }
 
+  // Меню пользователя (Dropdown)
+  const userMenu = (
+    <Menu
+      onClick={({ key }) => {
+        if (key === 'logout') {
+          handleLogout();
+        }
+      }}
+      items={[
+        {
+          key: 'logout',
+          icon: <LogoutOutlined />,
+          label: 'Выйти',
+        },
+      ]}
+    />
+  );
+
+  // Мобильное меню
+  const mobileMenu = (
+    <Menu
+      mode="vertical"
+      selectable={false}
+      className="mobile-menu"
+      items={menuItems}
+      onClick={handleMenuClick}
+    />
+  );
+
   return (
     <AntHeader className="header">
-      <div className="logo" onClick={() => navigate('/')}>
+      {/* Логотип */}
+      <div
+        className="logo"
+        onClick={() => navigate('/')}
+        role="button"
+        tabIndex={0}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') navigate('/');
+        }}
+        aria-label="Перейти на главную страницу"
+      >
         Tech Radar
       </div>
+
+      {/* Иконка-бургер для мобильных устройств */}
+      <div
+        className="mobile-menu-icon"
+        onClick={() => setMobileMenuVisible(!mobileMenuVisible)}
+        role="button"
+        tabIndex={0}
+        aria-label="Открыть мобильное меню"
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') setMobileMenuVisible(!mobileMenuVisible);
+        }}
+      >
+        <MenuOutlined />
+      </div>
+
+      {/* Основное меню для десктопных устройств */}
       <Menu
         mode="horizontal"
         selectable={false}
         className="menu"
         items={menuItems}
+        onClick={handleMenuClick}
+        aria-label="Основное меню"
       />
+
+      {/* Секция пользователя */}
       <div className="user-section">
         {isAuthenticated ? (
-          <Dropdown overlay={userMenu} placement="bottomRight">
-            <div className="user-info">
+          <Dropdown overlay={userMenu} placement="bottomRight" trigger={['click']}>
+            <div
+              className="user-info"
+              role="button"
+              tabIndex={0}
+              onClick={(e) => e.preventDefault()}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  // Дополнительные действия при нажатии Enter, если необходимо
+                }
+              }}
+              aria-label="Меню пользователя"
+            >
               <Avatar icon={<UserOutlined />} />
-              <span className="user-name">{user.name}</span>
+              <span className="user-name">{user.username}</span>
             </div>
           </Dropdown>
         ) : (
-          <div>
+          <div className="auth-buttons">
             <Button
               type="primary"
               onClick={() => navigate('/login')}
-              style={{ marginRight: '10px' }}
+              aria-label="Войти"
             >
               Войти
             </Button>
-            <Button onClick={() => navigate('/register')}>Регистрация</Button>
+            <Button
+              type="default"
+              onClick={() => navigate('/register')}
+              aria-label="Регистрация"
+            >
+              Регистрация
+            </Button>
           </div>
         )}
       </div>
+
+      {/* Мобильное меню */}
+      {mobileMenuVisible && mobileMenu}
     </AntHeader>
   );
 };

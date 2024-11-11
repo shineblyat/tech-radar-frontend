@@ -1,48 +1,191 @@
 /* src/components/Header.css */
 
-.header {
+/* ===================================================
+   1. Основные Стили Хедера
+   =================================================== */
+
+   .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: #001529;
+    background-color: var(--background-color);
     padding: 0 20px;
-  }
-  
-  .logo {
-    color: #fff;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.3s ease;
+}
+
+.header:hover {
+    background-color: #002140;
+}
+
+.logo {
+    color: var(--text-color);
     font-size: 24px;
     font-weight: bold;
     cursor: pointer;
-  }
-  
-  .menu {
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.logo:hover {
+    color: var(--secondary-color);
+    transform: scale(1.05);
+}
+
+/* ===================================================
+   2. Стили Меню
+   =================================================== */
+
+.menu {
     flex: 1;
     margin-left: 50px;
     background: none;
     border-bottom: none;
-  }
-  
-  .menu .ant-menu-item {
-    color: #fff;
-  }
-  
-  .menu .ant-menu-item:hover {
-    background-color: #1890ff;
-  }
-  
-  .user-section {
+}
+
+.menu .ant-menu-item {
+    color: var(--text-color);
+    font-size: 16px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.menu .ant-menu-item:hover {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.menu .ant-menu-item-selected {
+    background-color: var(--primary-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* ===================================================
+   3. Секция Пользователя
+   =================================================== */
+
+.user-section {
     display: flex;
     align-items: center;
-  }
-  
-  .user-info {
+}
+
+.user-info {
     display: flex;
     align-items: center;
     cursor: pointer;
-  }
-  
-  .user-name {
-    color: #fff;
+    transition: opacity 0.3s ease;
+}
+
+.user-info:hover {
+    opacity: 0.8;
+}
+
+.user-name {
+    color: var(--text-color);
     margin-left: 8px;
-  }
-  
+    font-size: 16px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.user-name:hover {
+    color: var(--secondary-color);
+}
+
+/* ===================================================
+   4. Стили Кнопок Аутентификации
+   =================================================== */
+
+.auth-buttons {
+    display: flex;
+    align-items: center;
+}
+
+.auth-buttons .ant-btn {
+    margin-left: 10px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.auth-buttons .ant-btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.auth-buttons .ant-btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: var(--text-color);
+}
+
+.auth-buttons .ant-btn-default {
+    border-color: var(--text-color);
+    color: var(--text-color);
+}
+
+.auth-buttons .ant-btn-default:hover {
+    background-color: var(--text-color);
+    color: var(--primary-color);
+}
+
+/* ===================================================
+   5. Мобильное Меню
+   =================================================== */
+
+/* Иконка-бургер для мобильных устройств */
+.mobile-menu-icon {
+    display: none; /* Скрываем по умолчанию */
+    font-size: 24px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.mobile-menu-icon:hover {
+    color: var(--secondary-color);
+}
+
+/* Мобильное меню */
+.mobile-menu {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background-color: var(--background-color);
+}
+
+.mobile-menu .ant-menu-item {
+    padding: 10px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ===================================================
+   6. Адаптивность
+   =================================================== */
+
+@media (max-width: 768px) {
+    .menu {
+        display: none; /* Скрываем основное меню на мобильных устройствах */
+    }
+
+    .mobile-menu-icon {
+        display: block; /* Показываем иконку-бургер на мобильных устройствах */
+    }
+
+    .user-section {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
+
+    .auth-buttons .ant-btn {
+        margin-left: 0;
+        margin-right: 10px;
+    }
+
+    .logo {
+        margin-bottom: 10px;
+    }
+}
