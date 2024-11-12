@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Form, Input, Button, Spin, message, Row, Col } from 'antd';
-import { axiosAuth } from '../utils/axiosInstances'; // Изменили импорт на axiosAuth
+import { axiosAuth } from '../utils/axiosInstances'; // Используем axiosAuth для запросов
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../store/userSlice';
@@ -15,20 +15,17 @@ const LoginPage = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      // Отправляем POST-запрос на эндпоинт /login с данными формы
-      const response = await axiosAuth.post('/login', {
-        username: values.username, // Изменено с 'name' на 'username'
+      // Используем метод POST и отправляем данные в теле запроса
+      const response = await axiosAuth.post('/authorization', {
+        name: values.name, // Используем 'name', как в базе данных
         password: values.password,
       });
 
       if (response.status === 200) {
-        const { user } = response.data; // Предполагается, что сервер возвращает только данные пользователя
+        const user = response.data; // Предполагаем, что сервер возвращает объект пользователя напрямую
 
         // Диспетчеризуем экшен для обновления состояния пользователя в Redux
         dispatch(loginSuccess({ user }));
-
-        // Удалено: сохранение токена в localStorage, так как токены не используются
-        // localStorage.setItem('authToken', token);
 
         message.success('Вход выполнен успешно!');
         navigate('/'); // Перенаправление на главную страницу после успешного входа
@@ -66,7 +63,7 @@ const LoginPage = () => {
           <h2 style={{ textAlign: 'center' }}>Вход</h2>
           <Form.Item
             label="Имя пользователя"
-            name="username" // Изменено с 'name' на 'username'
+            name="name" // Используем 'name' как в таблице базы данных
             rules={[{ required: true, message: 'Введите имя пользователя' }]}
           >
             <Input placeholder="Имя пользователя" />

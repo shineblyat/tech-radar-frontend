@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { Modal, Button, Select, Input, message } from 'antd';
 import { useSelector } from 'react-redux';
-import { axiosTech, axiosVoting } from '../utils/axiosInstances'; // Изменили импорт на axiosTech и axiosVoting
+import { axiosTech, axiosAuth, axiosVoting } from '../utils/axiosInstances'; // Изменили импорт на axiosTech и axiosVoting
 import './TechRadar.css'; // Импортируем стили для компонента
 
 const { Option } = Select;

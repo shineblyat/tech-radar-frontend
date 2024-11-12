@@ -12,33 +12,34 @@ import {
   Popconfirm,
   Spin,
 } from 'antd';
-import { axiosAuth } from '../utils/axiosInstances'; // Исправленный импорт на axiosAuth
-// Удалён импорт axiosTechnologyInstance, так как он больше не существует
-// import axiosTechnologyInstance from '../utils/axiosTechnologyInstance'; // Удалите этот импорт
-// import { useNavigate } from 'react-router-dom'; // Удалён, так как не используется
+import { axiosTech } from '../utils/axiosInstances'; // Используем axiosAuth для запросов
+import { useDispatch, useSelector } from 'react-redux';
 
 const { Option } = Select;
 
 const AdminPage = () => {
-  // Удалён navigate, так как он не используется
-  // const navigate = useNavigate();
+  const user = useSelector((state) => state.user.user); // Получаем пользователя из Redux
+  const dispatch = useDispatch();
 
   const [technologies, setTechnologies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingTech, setEditingTech] = useState(null);
   const [form] = Form.useForm();
   const [modalLoading, setModalLoading] = useState(false);
 
   useEffect(() => {
-    fetchTechnologies();
-  }, []);
+    if (user && user.role === 'ADMIN') {
+      fetchTechnologies();
+    } else {
+      message.error('У вас нет доступа к этой странице');
+    }
+  }, [user]);
 
   const fetchTechnologies = async () => {
     setLoading(true);
     try {
-      // Используем axiosAuth для запросов к административным эндпоинтам
-      const response = await axiosAuth.get('/admin/technology'); // Предполагается, что эндпоинт /admin/technology
+      // Используем общий эндпоинт для получения технологий
+      const response = await axiosTech.get('/technology');
       setTechnologies(response.data);
     } catch (error) {
       console.error('Ошибка при загрузке технологий:', error);
@@ -48,41 +49,29 @@ const AdminPage = () => {
     }
   };
 
-  const showModal = (tech = null) => {
-    setEditingTech(tech);
+  const showModal = () => {
     setIsModalVisible(true);
-    if (tech) {
-      form.setFieldsValue(tech);
-    } else {
-      form.resetFields();
-    }
+    form.resetFields();
   };
 
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
+      console.log('Отправляемые данные:', values); // Логирование данных формы
       setModalLoading(true);
-      if (editingTech) {
-        // Редактирование технологии
-        const response = await axiosAuth.put(`/admin/${editingTech.id}`, values);
-        if (response.status === 200) {
-          message.success('Технология обновлена');
-        }
-      } else {
-        // Добавление новой технологии
-        const response = await axiosAuth.post('/admin', values);
-        if (response.status === 200 || response.status === 201) {
-          message.success('Технология добавлена');
-        }
+      // Добавление новой технологии
+      const response = await axiosTech.post('/technology', values);
+      if (response.status === 200 || response.status === 201) {
+        message.success('Технология добавлена');
+        fetchTechnologies();
+        setIsModalVisible(false);
       }
-      fetchTechnologies();
-      setIsModalVisible(false);
     } catch (error) {
-      console.error('Ошибка при сохранении технологии:', error);
+      console.error('Ошибка при добавлении технологии:', error);
       if (error.response && error.response.data && error.response.data.message) {
         message.error(`Ошибка: ${error.response.data.message}`);
       } else {
-        message.error('Ошибка при сохранении технологии');
+        message.error('Ошибка при добавлении технологии');
       }
     } finally {
       setModalLoading(false);
@@ -91,7 +80,7 @@ const AdminPage = () => {
 
   const handleDelete = async (techId) => {
     try {
-      const response = await axiosAuth.delete(`/admin/${techId}`);
+      const response = await axiosTech.delete(`/technology/${techId}`);
       if (response.status === 200 || response.status === 204) {
         message.success('Технология удалена');
         fetchTechnologies();
@@ -156,24 +145,28 @@ const AdminPage = () => {
       title: 'Действия',
       key: 'actions',
       render: (_, record) => (
-        <>
-          <Button type="link" onClick={() => showModal(record)}>
-            Редактировать
+        <Popconfirm
+          title="Вы уверены, что хотите удалить эту технологию?"
+          onConfirm={() => handleDelete(record.id)}
+          okText="Да"
+          cancelText="Нет"
+        >
+          <Button type="link" danger>
+            Удалить
           </Button>
-          <Popconfirm
-            title="Вы уверены, что хотите удалить эту технологию?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Да"
-            cancelText="Нет"
-          >
-            <Button type="link" danger>
-              Удалить
-            </Button>
-          </Popconfirm>
-        </>
+        </Popconfirm>
       ),
     },
   ];
+
+  if (!user || user.role !== 'ADMIN') {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <h2>Доступ запрещён</h2>
+        <p>У вас нет прав для просмотра этой страницы.</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '20px' }}>
@@ -182,7 +175,7 @@ const AdminPage = () => {
       </h2>
       <Button
         type="primary"
-        onClick={() => showModal()}
+        onClick={showModal}
         style={{ marginBottom: '20px' }}
       >
         Добавить технологию
@@ -193,12 +186,12 @@ const AdminPage = () => {
         <Table dataSource={technologies} columns={columns} rowKey="id" />
       )}
       <Modal
-        title={editingTech ? 'Редактировать технологию' : 'Добавить технологию'}
+        title="Добавить технологию"
         visible={isModalVisible}
         onOk={handleOk}
         onCancel={() => setIsModalVisible(false)}
         confirmLoading={modalLoading}
-        okText={editingTech ? 'Сохранить' : 'Добавить'}
+        okText="Добавить"
       >
         <Form form={form} layout="vertical">
           <Form.Item
