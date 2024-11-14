@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Table, Button, message, Spin, Tabs } from 'antd';
-import { axiosTech, axiosVoting } from '../utils/axiosInstances'; // Изменили импорт на axiosTech и axiosVoting
+import { axiosAuth, axiosVoting } from '../utils/axiosInstances'; // Изменили импорт на axiosTech и axiosVoting
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import './VotingPage.css'; // Импортируем стили для VotingPage
@@ -27,7 +27,7 @@ const VotingPage = () => {
       try {
         // Заменили экземпляры Axios на axiosTech и axiosVoting
         const [techResponse, votesResponse] = await Promise.all([
-          axiosTech.get('/technology'), // GET-запрос для получения технологий
+          axiosAuth.get('/radar'), // GET-запрос для получения технологий
           axiosVoting.get('/vote'),       // GET-запрос для получения голосов пользователя
         ]);
 
