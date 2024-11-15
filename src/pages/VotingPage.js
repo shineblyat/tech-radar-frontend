@@ -1,8 +1,8 @@
 // src/pages/VotingPage.js
 
 import React, { useEffect, useState } from 'react';
-import { Table, Button, message, Spin, Tabs } from 'antd';
-import { axiosAuth, axiosVoting } from '../utils/axiosInstances'; // Изменили импорт на axiosTech и axiosVoting
+import { Table, Button, message, Spin, Tabs, Modal, InputNumber } from 'antd';
+import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import './VotingPage.css'; // Импортируем стили для VotingPage
@@ -13,6 +13,10 @@ const VotingPage = () => {
   const [technologies, setTechnologies] = useState([]);
   const [userVotes, setUserVotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [currentTech, setCurrentTech] = useState(null);
+  const [newRang, setNewRang] = useState(null);
+  
   const { isAuthenticated } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
@@ -25,15 +29,8 @@ const VotingPage = () => {
 
     const fetchData = async () => {
       try {
-        // Заменили экземпляры Axios на axiosTech и axiosVoting
-        const [techResponse, votesResponse] = await Promise.all([
-          axiosAuth.get('/radar'), // GET-запрос для получения технологий
-          axiosVoting.get('/vote'),       // GET-запрос для получения голосов пользователя
-        ]);
-
-        // Предположим, что данные возвращаются в формате { data: [...] }
-        setTechnologies(techResponse.data);
-        setUserVotes(votesResponse.data);
+        const response = await axios.get('http://localhost:8080/radar'); // Получение технологий с указанного URL
+        setTechnologies(response.data);
       } catch (error) {
         console.error('Ошибка при загрузке данных:', error);
         message.error('Ошибка при загрузке данных');
@@ -45,24 +42,46 @@ const VotingPage = () => {
     fetchData();
   }, [isAuthenticated, navigate]);
 
-  const handleVote = async (techId) => {
-    try {
-      // Используем axiosVoting для голосования
-      const response = await axiosVoting.post('/vote', { technologyId: techId });
-
-      // Предположим, что успешный ответ содержит данные голоса
-      if (response.status === 200 || response.status === 201) {
-        message.success('Ваш голос учтен');
-        setUserVotes((prevVotes) => [...prevVotes, response.data]);
-      }
-    } catch (error) {
-      console.error('Ошибка при голосовании:', error);
-      if (error.response && error.response.status === 400) {
-        message.error('Вы уже голосовали за эту технологию');
-      } else {
-        message.error('Ошибка при голосовании');
-      }
+  const handleVote = (tech) => {
+    // Проверяем, голосовал ли пользователь уже за эту технологию
+    const hasVoted = userVotes.find((vote) => vote.id === tech.id);
+    if (hasVoted) {
+      message.error('Вы уже голосовали за эту технологию');
+      return;
     }
+
+    // Открываем модальное окно для изменения ранга
+    setCurrentTech(tech);
+    setNewRang(tech.rang); // Инициализируем текущее значение ранга
+    setIsModalVisible(true);
+  };
+
+  const handleOk = () => {
+    if (newRang === null || newRang === undefined) {
+      message.error('Пожалуйста, введите новый ранг');
+      return;
+    }
+
+    // Обновляем ранг технологии в списке
+    setTechnologies((prevTechnologies) =>
+      prevTechnologies.map((tech) =>
+        tech.id === currentTech.id ? { ...tech, rang: newRang } : tech
+      )
+    );
+
+    // Добавляем голос в список голосов пользователя
+    setUserVotes((prevVotes) => [...prevVotes, { ...currentTech, voteDate: new Date().toISOString() }]);
+
+    message.success('Ваш голос учтен');
+    setIsModalVisible(false);
+    setCurrentTech(null);
+    setNewRang(null);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    setCurrentTech(null);
+    setNewRang(null);
   };
 
   if (loading) {
@@ -74,7 +93,7 @@ const VotingPage = () => {
   }
 
   // Получаем ID технологий, за которые пользователь уже проголосовал
-  const votedTechIds = userVotes.map((vote) => vote.technologyId);
+  const votedTechIds = userVotes.map((vote) => vote.id);
 
   // Фильтруем доступные для голосования технологии
   const availableTechnologies = technologies.filter(
@@ -94,7 +113,7 @@ const VotingPage = () => {
       key: 'technologyType',
     },
     {
-      title: 'Кольцо',
+      title: 'Кольцо (Rang)',
       dataIndex: 'rang',
       key: 'rang',
     },
@@ -102,7 +121,7 @@ const VotingPage = () => {
       title: 'Действие',
       key: 'action',
       render: (text, record) => (
-        <Button type="primary" onClick={() => handleVote(record.id)}>
+        <Button type="primary" onClick={() => handleVote(record)}>
           Проголосовать
         </Button>
       ),
@@ -113,17 +132,17 @@ const VotingPage = () => {
   const userVotesColumns = [
     {
       title: 'Название',
-      dataIndex: ['technology', 'name'], // Предположим, что голос содержит объект technology
+      dataIndex: 'name',
       key: 'name',
     },
     {
       title: 'Категория',
-      dataIndex: ['technology', 'technologyType'],
+      dataIndex: 'technologyType',
       key: 'technologyType',
     },
     {
-      title: 'Кольцо',
-      dataIndex: ['technology', 'rang'],
+      title: 'Кольцо (Rang)',
+      dataIndex: 'rang',
       key: 'rang',
     },
     {
@@ -163,6 +182,27 @@ const VotingPage = () => {
           />
         </TabPane>
       </Tabs>
+
+      {/* Модальное окно для изменения ранга при голосовании */}
+      <Modal
+        title={`Голосование за ${currentTech ? currentTech.name : ''}`}
+        visible={isModalVisible}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        okText="Проголосовать"
+      >
+        <p>Вы можете изменить ранг технологии перед голосованием.</p>
+        <p>Текущий ранг: {currentTech ? currentTech.rang : ''}</p>
+        <label htmlFor="newRang">Новый ранг:</label>
+        <InputNumber
+          id="newRang"
+          min={1}
+          max={10}
+          value={newRang}
+          onChange={(value) => setNewRang(value)}
+          style={{ width: '100%' }}
+        />
+      </Modal>
     </div>
   );
 };
